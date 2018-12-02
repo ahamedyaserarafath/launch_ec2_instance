@@ -62,7 +62,7 @@ class aws_ec2():
                                 region_name=self.aws_region)
             service_client = session.client(service_string)
             return service_client
-        except Exception, e:
+        except Exception as e:
             print("Exception while creating the session, Exception for your reference : " + str(e))
             sys.exit(1)
 
@@ -77,7 +77,7 @@ class aws_ec2():
             aws_instance_keypair_file.close()
             print("Successfull created the key pair with the name : ./" + self.aws_instance_keypair + ".pem")
             return self.aws_instance_keypair
-        except Exception, e:
+        except Exception as e:
             print("Exception while creating the keypair, Exception for your reference : " + str(e))
             sys.exit(1)
 
@@ -91,7 +91,7 @@ class aws_ec2():
                 ec2_client.authorize_security_group_ingress(GroupName=self.aws_instance_security_group ,\
                                                         IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=temp,ToPort=temp)
             print("Successfull created the security group with the inbound port  : "+ str(self.aws_instance_port))
-        except Exception, e:
+        except Exception as e:
             print("Exception while creating the security group, Exception for your reference : " + str(e))
             sys.exit(1)
 
@@ -143,7 +143,7 @@ class aws_ec2():
             print("PublicDnsName for your reference : " +PublicDnsName )
             print("PublicIpAddress for your reference : " +PublicIpAddress )
             return PublicDnsName
-        except Exception, e:
+        except Exception as e:
             print("Exception while creating the instance, Exception for your reference : " + str(e))
             sys.exit(1)
 
@@ -164,7 +164,7 @@ class install_application():
             print("connecting..." + str(PublicDnsName))
             ssh_client.connect( hostname = PublicDnsName,username = "ubuntu", pkey = private_key )
             return ssh_client
-        except Exception, e:
+        except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
             sys.exit(1)
 
@@ -180,7 +180,7 @@ class install_application():
                 stdin , stdout, stderr = ssh_client.exec_command(command)
                 print(stdout.read())
             ssh_client.close()
-        except Exception, e:
+        except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
             sys.exit(1)
 
