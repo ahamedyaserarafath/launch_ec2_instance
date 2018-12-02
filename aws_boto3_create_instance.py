@@ -142,7 +142,7 @@ class aws_ec2():
             PublicIpAddress = str(describe_instance["Reservations"][0]["Instances"][0]["PublicIpAddress"])
             print("PublicDnsName for your reference : " +PublicDnsName )
             print("PublicIpAddress for your reference : " +PublicIpAddress )
-            return PublicDnsName
+            return PublicDnsName, PublicIpAddress
         except Exception as e:
             print("Exception while creating the instance, Exception for your reference : " + str(e))
             sys.exit(1)
@@ -150,9 +150,10 @@ class aws_ec2():
 class install_application():
     """docstring for ClassName"""
 
-    def __init__(self, PublicDnsName,key_pair_file_name):
+    def __init__(self, PublicDnsName,PublicIpAddress,key_pair_file_name):
         self.username = "ubuntu"
         self.PublicDnsName = PublicDnsName
+        self.PublicIpAddress = PublicIpAddress
         self.key_pair_file_name = key_pair_file_name
 
     def connect_to_aws_instanace(self):
@@ -161,8 +162,8 @@ class install_application():
             private_key = paramiko.RSAKey.from_private_key_file(key_pair_file_name + ".pem")
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            print("connecting..." + str(PublicDnsName))
-            ssh_client.connect( hostname = PublicDnsName,username = "ubuntu", pkey = private_key )
+            print("connecting..." + str(self.PublicIpAddress))
+            ssh_client.connect( hostname = self.PublicIpAddress,username = "ubuntu", pkey = private_key )
             return ssh_client
         except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
@@ -190,9 +191,9 @@ if __name__ == '__main__':
     aws_ec2_instance = aws_ec2()
     key_pair_file_name= aws_ec2_instance.create_key_pair_using_boto3()
     aws_ec2_instance.create_security_group_using_boto3()
-    PublicDnsName = aws_ec2_instance.create_ec2_instance_using_boto3()
+    PublicDnsName,PublicIpAddress = aws_ec2_instance.create_ec2_instance_using_boto3()
 
-    aws_ec2_instance = install_application(PublicDnsName,key_pair_file_name)
+    aws_ec2_instance = install_application(PublicDnsName,PublicIpAddress,key_pair_file_name)
     aws_ec2_instance.execute_command()
     
 
