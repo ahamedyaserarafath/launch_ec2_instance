@@ -128,7 +128,9 @@ class aws_ec2():
                 describe_instance_status = ec2_client.describe_instance_status(InstanceIds=[InstanceId])
                 if describe_instance_status["InstanceStatuses"]:
                     instance_code = describe_instance_status["InstanceStatuses"][0]["InstanceState"]["Code"]
-                    if instance_code == 16 :
+                    InstanceStatus = describe_instance_status["InstanceStatuses"][0]["InstanceStatus"]["Status"]
+                    SystemStatus = describe_instance_status["InstanceStatuses"][0]["SystemStatus"]["Status"]
+                    if instance_code == 16 and InstanceStatus == "ok" and SystemStatus == "ok" :
                         print(InstanceId + " ec2 instance is up and running successfully ")
                         break
                 if count == 10:
@@ -158,7 +160,6 @@ class install_application():
 
     def connect_to_aws_instanace(self):
         try:
-            import pdb;pdb.set_trace()
             private_key = paramiko.RSAKey.from_private_key_file(key_pair_file_name + ".pem")
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -171,15 +172,16 @@ class install_application():
 
     def execute_command(self):
         try:
-            import pdb;pdb.set_trace()
             ssh_client = self.connect_to_aws_instanace()
-            commands = [ "sudo snap install ruby --classic", \
+            commands = [ "sudo apt update", \
+                                    "sudo apt -y install ruby-bundler",\
                                     "git clone https://github.com/iproperty/simple-sinatra-app.git",\
                                     "cd simple-sinatra-app/ ; bundle install", \
-                                    "cd simple-sinatra-app/ ; sudo bundle exec rackup --host 0.0.0.0 -p80 & > application.log "]
+                                    "cd simple-sinatra-app/ ; sudo bundle exec rackup --host 0.0.0.0 -p80 > application.log 2>&1 &"]
             for command in commands:
                 stdin , stdout, stderr = ssh_client.exec_command(command)
-                print(stdout.read())
+                print(stdout.read());
+                print(stderr.read());
             ssh_client.close()
         except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
@@ -189,8 +191,10 @@ class install_application():
 
 if __name__ == '__main__':
     aws_ec2_instance = aws_ec2()
+    #key_pair_file_name= "testingy-keypair"#aws_ec2_instance.create_key_pair_using_boto3()
     key_pair_file_name= aws_ec2_instance.create_key_pair_using_boto3()
     aws_ec2_instance.create_security_group_using_boto3()
+    #PublicDnsName,PublicIpAddress = "ec2-13-127-201-138.ap-south-1.compute.amazonaws.com","13.127.201.138"#aws_ec2_instance.create_ec2_instance_using_boto3()
     PublicDnsName,PublicIpAddress = aws_ec2_instance.create_ec2_instance_using_boto3()
 
     aws_ec2_instance = install_application(PublicDnsName,PublicIpAddress,key_pair_file_name)
