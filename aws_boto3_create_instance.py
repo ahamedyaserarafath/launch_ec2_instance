@@ -15,7 +15,6 @@ import boto3
 import argparse
 import sys
 import time
-
 import paramiko
 
 class aws_ec2():
@@ -55,6 +54,7 @@ class aws_ec2():
             sys.exit(1)
 
     def create_client_using_boto3(self,service_string="ec2"):
+        """ Create the client connection using boto3"""
         try:
             session = boto3.Session(
                                 aws_access_key_id=self.aws_access_key,
@@ -67,6 +67,7 @@ class aws_ec2():
             sys.exit(1)
 
     def create_key_pair_using_boto3(self):
+        """Create the key pair using boto3"""
         try:
             print("Initiating the key pair generation for the instance with the name : " + self.aws_instance_keypair)
             ec2_client = self.create_client_using_boto3("ec2")
@@ -82,6 +83,7 @@ class aws_ec2():
             sys.exit(1)
 
     def create_security_group_using_boto3(self):
+        """Create the security group using boto3"""
         try:
             print("Creating the security group for the instance with the name : "+ self.aws_instance_security_group )
             ec2_client = self.create_client_using_boto3("ec2")
@@ -96,6 +98,7 @@ class aws_ec2():
             sys.exit(1)
 
     def create_ec2_instance_using_boto3(self):
+        """ Launch the ec2 instances using boto3 """
         try:
             print("Launching the ec2 instance")
             ec2_client = self.create_client_using_boto3("ec2")
@@ -150,7 +153,7 @@ class aws_ec2():
             sys.exit(1)
 
 class install_application():
-    """docstring for ClassName"""
+    """Class which install ruby application"""
 
     def __init__(self, PublicDnsName,PublicIpAddress,key_pair_file_name):
         self.username = "ubuntu"
@@ -159,18 +162,21 @@ class install_application():
         self.key_pair_file_name = key_pair_file_name
 
     def connect_to_aws_instanace(self):
+        """ Connect to aws instance using paramiko """
         try:
             private_key = paramiko.RSAKey.from_private_key_file(key_pair_file_name + ".pem")
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            print("connecting..." + str(self.PublicIpAddress))
+            print("connecting to ..." + str(self.PublicIpAddress))
             ssh_client.connect( hostname = self.PublicIpAddress,username = "ubuntu", pkey = private_key )
+            print("Successfull connected to " + str(self.PublicIpAddress))
             return ssh_client
         except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
             sys.exit(1)
 
     def execute_command(self):
+        """ Execute command in the aws instances"""
         try:
             ssh_client = self.connect_to_aws_instanace()
             commands = [ "sudo apt update", \
@@ -180,8 +186,6 @@ class install_application():
                                     "cd simple-sinatra-app/ ; sudo bundle exec rackup --host 0.0.0.0 -p80 > application.log 2>&1 &"]
             for command in commands:
                 stdin , stdout, stderr = ssh_client.exec_command(command)
-                print(stdout.read());
-                print(stderr.read());
             ssh_client.close()
         except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
@@ -190,29 +194,17 @@ class install_application():
         
 
 if __name__ == '__main__':
+    # Launching the aws ec2 instance
     aws_ec2_instance = aws_ec2()
-    #key_pair_file_name= "testingy-keypair"#aws_ec2_instance.create_key_pair_using_boto3()
+    # Creating the key pair file name
     key_pair_file_name= aws_ec2_instance.create_key_pair_using_boto3()
+    # Creating the security group 
     aws_ec2_instance.create_security_group_using_boto3()
-    #PublicDnsName,PublicIpAddress = "ec2-13-127-201-138.ap-south-1.compute.amazonaws.com","13.127.201.138"#aws_ec2_instance.create_ec2_instance_using_boto3()
+    # Launching the ec2 instance
     PublicDnsName,PublicIpAddress = aws_ec2_instance.create_ec2_instance_using_boto3()
-
+    # Connecting to instance to install the application
     aws_ec2_instance = install_application(PublicDnsName,PublicIpAddress,key_pair_file_name)
+    # Executing the list of commands in the instance
     aws_ec2_instance.execute_command()
     
 
-
-# k = paramiko.RSAKey.from_private_key_file("/home/local/PAYODA/ahamedyaserarafath.m/personal/rea/my-key-pair.pem")
-# c = paramiko.SSHClient()
-# c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-# print "connecting" + str(args[1:])
-# c.connect( hostname = '52.204.12.226',username = "ubuntu", pkey = k )
-# print "connected"
-# commands = [ "ls", "ls /" ]
-# for command in commands:
-#   print "Executing {}".format( command )
-#   stdin , stdout, stderr = c.exec_command(command)
-#   print stdout.read()
-#   print( "Errors")
-#   print stderr.read()
-# c.close()
