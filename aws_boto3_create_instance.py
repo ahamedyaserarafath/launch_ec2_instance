@@ -186,6 +186,10 @@ class install_application():
                                     "cd simple-sinatra-app/ ; sudo bundle exec rackup --host 0.0.0.0 -p80 > application.log 2>&1 &"]
             for command in commands:
                 stdin , stdout, stderr = ssh_client.exec_command(command)
+                stdout.read()
+                stderr.read()
+                print("Successfully executed the command : " + str(command) )
+            print("Application should be up and running, please check http://"+ str(self.PublicIpAddress))
             ssh_client.close()
         except Exception as e:
             print("Exception while connecting to the instance, Exception for your reference : " + str(e))
